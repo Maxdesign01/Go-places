@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'core/theme/app_colors.dart';
+import 'core/widgets/device_mockup_preview.dart';
 import 'features/onboarding/presentation/screens/onboarding_screen.dart';
 
 void main() {
@@ -48,6 +49,7 @@ class GoPlacesApp extends StatelessWidget {
             ),
             useMaterial3: true,
           ),
+          builder: (context, child) => DeviceMockupPreview(child: child!),
           home: const OnboardingScreen(),
         );
       },
