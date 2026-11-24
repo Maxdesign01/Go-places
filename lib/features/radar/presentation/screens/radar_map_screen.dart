@@ -3,8 +3,10 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/state/location_state.dart';
 import '../../../home/data/mock_data.dart';
 import '../../../home/domain/models/place_model.dart';
+import '../../../home/presentation/widgets/state_selector_sheet.dart';
 import '../../../place_detail/presentation/screens/place_detail_screen.dart';
 
 /// RadarMapScreen: Real Google Maps & Satellite integration
@@ -27,9 +29,10 @@ class _RadarMapScreenState extends State<RadarMapScreen>
   late final PageController _pageController;
   late final AnimationController _pulseController;
 
-  static const LatLng _userLocation = LatLng(6.4281, 3.4219); // Victoria Island, Lagos
+  LatLng get _userLocation => LocationStateNotifier.instance.selectedCoordinates;
 
-  List<PlaceModel> get _allPlaces => MockData.curatedPlaces;
+  List<PlaceModel> get _allPlaces =>
+      MockData.getPlacesForState(LocationStateNotifier.instance.selectedStateId);
 
   List<PlaceModel> get _filteredPlaces {
     if (_selectedMoodFilter == 'all') {
@@ -43,6 +46,7 @@ class _RadarMapScreenState extends State<RadarMapScreen>
   @override
   void initState() {
     super.initState();
+    LocationStateNotifier.instance.addListener(_onLocationChanged);
     _mapController = MapController();
     _pageController = PageController(viewportFraction: 0.88);
 
@@ -52,8 +56,21 @@ class _RadarMapScreenState extends State<RadarMapScreen>
     )..repeat();
   }
 
+  void _onLocationChanged() {
+    if (mounted) {
+      setState(() {
+        _selectedPlaceIndex = 0;
+      });
+      _mapController.move(_userLocation, 13.5);
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(0);
+      }
+    }
+  }
+
   @override
   void dispose() {
+    LocationStateNotifier.instance.removeListener(_onLocationChanged);
     _mapController.dispose();
     _pageController.dispose();
     _pulseController.dispose();
@@ -106,10 +123,10 @@ class _RadarMapScreenState extends State<RadarMapScreen>
   void _recenterOnUser() {
     _mapController.move(_userLocation, 14.8);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Centered on your live location in Victoria Island'),
+      SnackBar(
+        content: Text('Centered on ${LocationStateNotifier.instance.selectedDisplayName}'),
         behavior: SnackBarBehavior.floating,
-        duration: Duration(milliseconds: 1400),
+        duration: const Duration(milliseconds: 1400),
       ),
     );
   }
@@ -170,12 +187,12 @@ class _RadarMapScreenState extends State<RadarMapScreen>
           // 1. Real Google Maps FlutterMap Layer
           FlutterMap(
             mapController: _mapController,
-            options: const MapOptions(
-              initialCenter: LatLng(6.4295, 3.4260),
+            options: MapOptions(
+              initialCenter: LocationStateNotifier.instance.selectedCoordinates,
               initialZoom: 14.4,
               minZoom: 10.0,
               maxZoom: 19.0,
-              interactionOptions: InteractionOptions(
+              interactionOptions: const InteractionOptions(
                 flags: InteractiveFlag.all,
               ),
             ),
@@ -199,7 +216,7 @@ class _RadarMapScreenState extends State<RadarMapScreen>
                   ),
 
                   // Real-Time Events Markers on Google Map
-                  ...MockData.liveEvents.map((event) {
+                  ...MockData.getEventsForState(LocationStateNotifier.instance.selectedStateId).map((event) {
                     return Marker(
                       point: LatLng(event.latitude, event.longitude),
                       width: 140,
@@ -257,51 +274,59 @@ class _RadarMapScreenState extends State<RadarMapScreen>
 
                       const SizedBox(width: 10),
 
-                      // City & Map Mode Indicator
+                      // City & Map Mode Indicator (Tappable State Selector)
                       Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: AppColors.isDark
-                                ? const Color(0xEE1A1D27)
-                                : Colors.white.withValues(alpha: 0.94),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.borderHairline),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(
-                                    alpha: AppColors.isDark ? 0.35 : 0.08),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.public_rounded,
-                                  size: 16, color: AppColors.accentCoral),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Victoria Island • $_mapLayerDisplayName',
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textPrimary,
+                        child: GestureDetector(
+                          onTap: () => StateSelectorBottomSheet.show(context),
+                          behavior: HitTestBehavior.opaque,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: AppColors.isDark
+                                  ? const Color(0xEE1A1D27)
+                                  : Colors.white.withValues(alpha: 0.94),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppColors.borderHairline),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(
+                                      alpha: AppColors.isDark ? 0.35 : 0.08),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.public_rounded,
+                                    size: 16, color: AppColors.accentCoral),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${LocationStateNotifier.instance.selectedStateName} • $_mapLayerDisplayName',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.statusLiveGreen,
-                                  shape: BoxShape.circle,
+                                const SizedBox(width: 4),
+                                Icon(Icons.keyboard_arrow_down_rounded,
+                                    size: 16, color: AppColors.textSecondary),
+                                const SizedBox(width: 6),
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.statusLiveGreen,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),

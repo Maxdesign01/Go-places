@@ -15,6 +15,7 @@ class PlaceModel {
   final bool isTrending;
   final double latitude;
   final double longitude;
+  final String stateId;
 
   const PlaceModel({
     required this.id,
@@ -33,6 +34,7 @@ class PlaceModel {
     this.isTrending = false,
     this.latitude = 6.4281,
     this.longitude = 3.4219,
+    this.stateId = 'lagos',
   });
 }
 
@@ -53,6 +55,7 @@ class EventModel {
   final double latitude;
   final double longitude;
   final String timeCategory;
+  final String stateId;
 
   const EventModel({
     required this.id,
@@ -71,5 +74,6 @@ class EventModel {
     this.latitude = 6.4281,
     this.longitude = 3.4219,
     this.timeCategory = 'Tonight',
+    this.stateId = 'lagos',
   });
 }

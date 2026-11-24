@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/state/location_state.dart';
 import '../../../home/data/mock_data.dart';
 import '../../../home/domain/models/place_model.dart';
+import '../../../home/presentation/widgets/state_selector_sheet.dart';
 import 'radar_map_screen.dart';
 
 class LiveRadarScreen extends StatefulWidget {
@@ -44,13 +46,25 @@ class _LiveRadarScreenState extends State<LiveRadarScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    LocationStateNotifier.instance.addListener(_onLocationChanged);
+  }
+
+  void _onLocationChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
+    LocationStateNotifier.instance.removeListener(_onLocationChanged);
     _searchController.dispose();
     super.dispose();
   }
 
   List<EventModel> get _filteredEvents {
-    return MockData.liveEvents.where((e) {
+    final stateId = LocationStateNotifier.instance.selectedStateId;
+    return MockData.getEventsForState(stateId).where((e) {
       // Category filter
       final matchesCategory = _selectedCategory == 'All' ||
           e.tag.toLowerCase() == _selectedCategory.toLowerCase();
@@ -746,7 +760,7 @@ class _LiveRadarScreenState extends State<LiveRadarScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            'Happening in Lagos',
+                            'Happening in ${LocationStateNotifier.instance.selectedStateName}',
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 26,
                               fontWeight: FontWeight.w700,
@@ -1088,36 +1102,43 @@ class _LiveRadarScreenState extends State<LiveRadarScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // City / Neighbourhood Badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: AppColors.borderHairline),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.radar_rounded,
-                  size: 16, color: AppColors.accentCoral),
-              const SizedBox(width: 6),
-              Text(
-                'Lagos Island Radar',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+        // City / Neighbourhood Badge (Tappable State Selector)
+        GestureDetector(
+          onTap: () => StateSelectorBottomSheet.show(context),
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceCard,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: AppColors.borderHairline),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
-              ),
-            ],
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.radar_rounded,
+                    size: 16, color: AppColors.accentCoral),
+                const SizedBox(width: 6),
+                Text(
+                  '${LocationStateNotifier.instance.selectedStateName} Radar',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.keyboard_arrow_down_rounded,
+                    size: 16, color: AppColors.textSecondary),
+              ],
+            ),
           ),
         ),
 

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/state/location_state.dart';
 import '../../data/mock_data.dart';
 import '../../domain/models/place_model.dart';
 import '../widgets/curated_place_card.dart';
 import '../widgets/floating_navbar.dart';
 import '../widgets/live_events_carousel.dart';
 import '../widgets/mood_selector.dart';
+import '../widgets/state_selector_sheet.dart';
 import '../../../place_detail/presentation/screens/place_detail_screen.dart';
 import '../../../radar/presentation/screens/live_radar_screen.dart';
 import '../../../radar/presentation/screens/radar_map_screen.dart';
@@ -51,13 +53,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    LocationStateNotifier.instance.addListener(_onLocationChanged);
+  }
+
+  void _onLocationChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
+    LocationStateNotifier.instance.removeListener(_onLocationChanged);
     _promptController.dispose();
     super.dispose();
   }
 
   List<PlaceModel> get _filteredPlaces {
-    return MockData.curatedPlaces.where((place) {
+    final stateId = LocationStateNotifier.instance.selectedStateId;
+    return MockData.getPlacesForState(stateId).where((place) {
       // Mood filter
       if (_selectedMood != 'all' && place.mood != _selectedMood) {
         return false;
@@ -242,7 +256,8 @@ class _HomeScreenState extends State<HomeScreen> {
           // 5. Live Events Carousel (Happening Right Now)
           SliverToBoxAdapter(
             child: LiveEventsCarousel(
-              events: MockData.liveEvents,
+              events: MockData.getEventsForState(
+                  LocationStateNotifier.instance.selectedStateId),
               onEventTap: (event) {
                 setState(() {
                   _navIndex = 1; // Switch to Live Radar tab
@@ -374,7 +389,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // --- TAB 2: SAVED BUCKET LIST VIEW ---
   Widget _buildSavedView() {
-    final savedPlaces = MockData.curatedPlaces.take(3).toList();
+    final stateId = LocationStateNotifier.instance.selectedStateId;
+    final savedPlaces = MockData.getPlacesForState(stateId).take(3).toList();
 
     return SafeArea(
       bottom: false,
@@ -484,18 +500,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceSubtle,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '📍 Victoria Island, Lagos',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                    GestureDetector(
+                      onTap: () => StateSelectorBottomSheet.show(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceSubtle,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '📍 ${LocationStateNotifier.instance.selectedPopularAreas.split(',').first.trim()}, ${LocationStateNotifier.instance.selectedStateName} ⌄',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                       ),
                     ),
@@ -870,7 +889,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showLocationRadiusDialog() {
-    final radii = ['3 km', '5 km', '10 km', '25 km', 'Anywhere in Lagos'];
+    final stateName = LocationStateNotifier.instance.selectedStateName;
+    final radii = ['3 km', '5 km', '10 km', '25 km', 'Anywhere in $stateName'];
 
     showDialog(
       context: context,
@@ -1086,40 +1106,44 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Location Pill
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: AppColors.borderHairline,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+        // Location Pill (Tappable State Selector)
+        GestureDetector(
+          onTap: () => StateSelectorBottomSheet.show(context),
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceCard,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.borderHairline,
               ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.location_on, size: 16, color: AppColors.accentCoral),
-              const SizedBox(width: 6),
-              Text(
-                'Lagos, Nigeria',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Icon(Icons.keyboard_arrow_down_rounded,
-                  size: 18, color: AppColors.textSecondary),
-            ],
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.location_on, size: 16, color: AppColors.accentCoral),
+                const SizedBox(width: 6),
+                Text(
+                  LocationStateNotifier.instance.selectedDisplayName,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.keyboard_arrow_down_rounded,
+                    size: 18, color: AppColors.textSecondary),
+              ],
+            ),
           ),
         ),
 
