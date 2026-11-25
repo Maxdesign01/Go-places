@@ -41,7 +41,7 @@ class LocationStateNotifier extends ChangeNotifier {
     CityStateModel(
       id: 'abuja',
       name: 'Abuja',
-      displayName: 'Abuja (FCT), Nigeria',
+      displayName: 'Abuja, Nigeria',
       popularAreas: 'Maitama, Wuse 2, Jabi, Central Area, Garki',
       centerCoordinates: LatLng(9.0765, 7.3986),
       spotsCount: 12,
@@ -50,7 +50,7 @@ class LocationStateNotifier extends ChangeNotifier {
     CityStateModel(
       id: 'rivers',
       name: 'Port Harcourt',
-      displayName: 'Port Harcourt, Rivers',
+      displayName: 'Port Harcourt, NG',
       popularAreas: 'GRA Phase 2, Old GRA, Peter Odili, Trans Amadi',
       centerCoordinates: LatLng(4.8156, 7.0498),
       spotsCount: 9,
@@ -59,7 +59,7 @@ class LocationStateNotifier extends ChangeNotifier {
     CityStateModel(
       id: 'oyo',
       name: 'Ibadan',
-      displayName: 'Ibadan, Oyo',
+      displayName: 'Ibadan, Nigeria',
       popularAreas: 'Bodija, Ring Road, Jericho, UI Area, Oluyole',
       centerCoordinates: LatLng(7.3775, 3.9470),
       spotsCount: 8,
@@ -76,8 +76,8 @@ class LocationStateNotifier extends ChangeNotifier {
     ),
     CityStateModel(
       id: 'delta',
-      name: 'Asaba & Warri',
-      displayName: 'Delta State, Nigeria',
+      name: 'Delta',
+      displayName: 'Delta, Nigeria',
       popularAreas: 'Asaba GRA, Okpanam Road, Warri GRA, Effurun',
       centerCoordinates: LatLng(6.1984, 6.7329),
       spotsCount: 5,

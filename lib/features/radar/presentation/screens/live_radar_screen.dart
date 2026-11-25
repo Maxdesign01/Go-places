@@ -1102,45 +1102,53 @@ class _LiveRadarScreenState extends State<LiveRadarScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // City / Neighbourhood Badge (Tappable State Selector)
-        GestureDetector(
-          onTap: () => StateSelectorBottomSheet.show(context),
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceCard,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: AppColors.borderHairline),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.radar_rounded,
-                    size: 16, color: AppColors.accentCoral),
-                const SizedBox(width: 6),
-                Text(
-                  '${LocationStateNotifier.instance.selectedStateName} Radar',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+        // City / Neighbourhood Badge (Tappable State Selector with Responsive Ellipsis)
+        Flexible(
+          child: GestureDetector(
+            onTap: () => StateSelectorBottomSheet.show(context),
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceCard,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: AppColors.borderHairline),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-                const SizedBox(width: 4),
-                Icon(Icons.keyboard_arrow_down_rounded,
-                    size: 16, color: AppColors.textSecondary),
-              ],
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.radar_rounded,
+                      size: 16, color: AppColors.accentCoral),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      '${LocationStateNotifier.instance.selectedStateName} Radar',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.keyboard_arrow_down_rounded,
+                      size: 16, color: AppColors.textSecondary),
+                ],
+              ),
             ),
           ),
         ),
+
+        const SizedBox(width: 8),
 
         // Map View Mode Button
         GestureDetector(
